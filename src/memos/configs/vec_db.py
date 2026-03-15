@@ -54,6 +54,28 @@ class MilvusVecDBConfig(BaseVecDBConfig):
     password: str = Field(default="", description="Password for Milvus connection")
 
 
+class PGVectorVecDBConfig(BaseVecDBConfig):
+    """Configuration for PostgreSQL + pgvector vector database."""
+
+    host: str = Field(default="localhost", description="Host for PostgreSQL")
+    port: int = Field(default=5432, description="Port for PostgreSQL")
+    database: str = Field(default="memos", description="Database name")
+    user: str = Field(default="memos", description="User name for PostgreSQL")
+    password: str = Field(default="", description="Password for PostgreSQL")
+    index_type: str = Field(
+        default="hnsw", description="Index type for vector search: 'hnsw' or 'ivfflat'"
+    )
+    index_lists: int = Field(
+        default=100, description="Number of lists for IVFFlat index (only used if index_type='ivfflat')"
+    )
+    m: int = Field(
+        default=16, description="M parameter for HNSW index (number of bi-directional links)"
+    )
+    ef_construction: int = Field(
+        default=64, description="Ef_construction parameter for HNSW index (size of dynamic candidate list)"
+    )
+
+
 class VectorDBConfigFactory(BaseConfig):
     """Factory class for creating vector database configurations."""
 
@@ -63,6 +85,7 @@ class VectorDBConfigFactory(BaseConfig):
     backend_to_class: ClassVar[dict[str, Any]] = {
         "qdrant": QdrantVecDBConfig,
         "milvus": MilvusVecDBConfig,
+        "pgvector": PGVectorVecDBConfig,
     }
 
     @field_validator("backend")
