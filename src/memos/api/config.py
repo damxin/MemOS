@@ -661,6 +661,53 @@ class APIConfig:
         }
 
     @staticmethod
+    def _get_vec_db_config() -> dict[str, Any]:
+        """Get vector database configuration based on VECTOR_DB_BACKEND env var."""
+        backend = os.getenv("VECTOR_DB_BACKEND", os.getenv("MEMOS_VEC_DB_BACKEND", "qdrant")).lower()
+        vector_dimension = int(os.getenv("EMBEDDING_DIMENSION", 1024))
+        
+        if backend == "pgvector":
+            return {
+                "backend": "pgvector",
+                "config": {
+                    "collection_name": os.getenv("PGVECTOR_COLLECTION", "neo4j_vec_db"),
+                    "vector_dimension": vector_dimension,
+                    "distance_metric": os.getenv("PGVECTOR_DISTANCE", "cosine"),
+                    "host": os.getenv("PGVECTOR_HOST", os.getenv("MEMOS_VEC_DB_HOST", "localhost")),
+                    "port": int(os.getenv("PGVECTOR_PORT", os.getenv("MEMOS_VEC_DB_PORT", "5432"))),
+                    "database": os.getenv("PGVECTOR_DATABASE", os.getenv("MEMOS_VEC_DB_DATABASE", "memos")),
+                    "user": os.getenv("PGVECTOR_USER", os.getenv("MEMOS_VEC_DB_USER", "memos")),
+                    "password": os.getenv("PGVECTOR_PASSWORD", os.getenv("MEMOS_VEC_DB_PASSWORD", "")),
+                    "index_type": os.getenv("PGVECTOR_INDEX_TYPE", "hnsw"),
+                },
+            }
+        elif backend == "milvus":
+            return {
+                "backend": "milvus",
+                "config": {
+                    "collection_name": [os.getenv("MILVUS_COLLECTION", "neo4j_vec_db")],
+                    "vector_dimension": vector_dimension,
+                    "uri": os.getenv("MILVUS_URI", "http://localhost:19530"),
+                    "user_name": os.getenv("MILVUS_USER", ""),
+                    "password": os.getenv("MILVUS_PASSWORD", ""),
+                },
+            }
+        else:  # qdrant (default)
+            return {
+                "backend": "qdrant",
+                "config": {
+                    "collection_name": "neo4j_vec_db",
+                    "vector_dimension": vector_dimension,
+                    "distance_metric": "cosine",
+                    "host": os.getenv("QDRANT_HOST", "localhost"),
+                    "port": int(os.getenv("QDRANT_PORT", "6333")),
+                    "path": os.getenv("QDRANT_PATH"),
+                    "url": os.getenv("QDRANT_URL"),
+                    "api_key": os.getenv("QDRANT_API_KEY"),
+                },
+            }
+
+    @staticmethod
     def get_neo4j_community_config(user_id: str | None = None) -> dict[str, Any]:
         """Get Neo4j community configuration."""
         return {
@@ -672,21 +719,7 @@ class APIConfig:
             "auto_create": False,
             "use_multi_db": False,
             "embedding_dimension": int(os.getenv("EMBEDDING_DIMENSION", 1024)),
-            "vec_config": {
-                # Pass nested config to initialize external vector DB
-                # If you use qdrant, please use Server instead of local mode.
-                "backend": "qdrant",
-                "config": {
-                    "collection_name": "neo4j_vec_db",
-                    "vector_dimension": int(os.getenv("EMBEDDING_DIMENSION", 1024)),
-                    "distance_metric": "cosine",
-                    "host": os.getenv("QDRANT_HOST", "localhost"),
-                    "port": int(os.getenv("QDRANT_PORT", "6333")),
-                    "path": os.getenv("QDRANT_PATH"),
-                    "url": os.getenv("QDRANT_URL"),
-                    "api_key": os.getenv("QDRANT_API_KEY"),
-                },
-            },
+            "vec_config": APIConfig._get_vec_db_config(),
         }
 
     @staticmethod
