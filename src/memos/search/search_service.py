@@ -47,7 +47,7 @@ def search_text_memories(
     Shared text-memory search logic for API and scheduler paths.
     """
     ctx = build_search_context(search_req=search_req)
-    return text_mem.search(
+    result = text_mem.search(
         query=search_req.query,
         user_name=user_context.mem_cube_id,
         top_k=search_req.top_k,
@@ -67,3 +67,5 @@ def search_text_memories(
         dedup=search_req.dedup,
         include_embedding=include_embedding,
     )
+    print(f"[SEARCH_SERVICE] text_mem.search returned {len(result)} results", flush=True)
+    return result

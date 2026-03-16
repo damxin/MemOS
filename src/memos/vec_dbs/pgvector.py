@@ -306,7 +306,7 @@ class PGVectorVecDB(BaseVecDB):
 
                 results.append(VecDBItem(
                     id=str(row[0]),
-                    vector=list(row[1]) if row[1] is not None else None,
+                    vector=row[1].tolist() if row[1] is not None else None,
                     payload=row[2],
                     score=score,
                 ))
@@ -340,7 +340,7 @@ class PGVectorVecDB(BaseVecDB):
 
             return VecDBItem(
                 id=str(row[0]),
-                vector=list(row[1]) if row[1] else None,
+                vector=row[1].tolist() if row[1] is not None else None,
                 payload=row[2],
             )
 
@@ -372,7 +372,7 @@ class PGVectorVecDB(BaseVecDB):
             for row in cur.fetchall():
                 results.append(VecDBItem(
                     id=str(row[0]),
-                    vector=list(row[1]) if row[1] else None,
+                    vector=row[1].tolist() if row[1] is not None else None,
                     payload=row[2],
                 ))
             return results
@@ -413,7 +413,7 @@ class PGVectorVecDB(BaseVecDB):
             for row in cur.fetchall():
                 results.append(VecDBItem(
                     id=str(row[0]),
-                    vector=list(row[1]) if row[1] else None,
+                    vector=row[1].tolist() if row[1] is not None else None,
                     payload=row[2],
                 ))
             return results
@@ -438,7 +438,7 @@ class PGVectorVecDB(BaseVecDB):
             for row in cur.fetchall():
                 results.append(VecDBItem(
                     id=str(row[0]),
-                    vector=list(row[1]) if row[1] else None,
+                    vector=row[1].tolist() if row[1] is not None else None,
                     payload=row[2],
                 ))
             return results

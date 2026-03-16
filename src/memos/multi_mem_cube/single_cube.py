@@ -399,12 +399,15 @@ class SingleCubeView(MemCubeView):
             include_embedding=(search_req.dedup in ("mmr", "sim")),
         )
 
-        return self._postformat_memories(
+        print(f"[FAST_SEARCH] search_text_memories returned {len(search_results)} results", flush=True)
+        result = self._postformat_memories(
             search_results,
             user_context.mem_cube_id,
             include_embedding=(search_req.dedup in ("mmr", "sim")),
             neighbor_discovery=search_req.neighbor_discovery,
         )
+        print(f"[FAST_SEARCH] _postformat_memories returned {len(result)} results", flush=True)
+        return result
 
     def _postformat_memories(
         self,
@@ -416,6 +419,7 @@ class SingleCubeView(MemCubeView):
         """
         Postprocess search results.
         """
+        print(f"[POSTFORMAT] _postformat_memories called with {len(search_results)} results", flush=True)
 
         def extract_edge_info(edges_info: list[dict], neighbor_relativity: float):
             edge_mems = []
@@ -455,6 +459,7 @@ class SingleCubeView(MemCubeView):
         else:
             final_items = search_results
 
+        print(f"[POSTFORMAT] Returning {len(final_items)} formatted items", flush=True)
         return [
             format_memory_item(data, include_embedding=include_embedding) for data in final_items
         ]

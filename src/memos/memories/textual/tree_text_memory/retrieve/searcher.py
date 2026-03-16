@@ -91,6 +91,7 @@ class Searcher:
         pref_mem_top_k: int = 6,
         **kwargs,
     ) -> list[tuple[TextualMemoryItem, float]]:
+        print(f"[RETRIEVE] Searcher.retrieve() called with query='{query}'", flush=True)
         logger.info(
             f"[RECALL] Start query='{query}', top_k={top_k}, mode={mode}, memory_type={memory_type}, user_name={user_name}"
         )
@@ -102,6 +103,11 @@ class Searcher:
             search_priority=search_priority,
             user_name=user_name,
             **kwargs,
+        )
+        logger.info(
+            f"[RECALL] After parse: query_embedding={'YES' if query_embedding else 'NONE'}, "
+            f"parsed_goal.memories={len(parsed_goal.memories) if parsed_goal.memories else 0}, "
+            f"rephrased_query='{query}'"
         )
         results = self._retrieve_paths(
             query,
@@ -194,6 +200,7 @@ class Searcher:
         Returns:
             list[TextualMemoryItem]: List of matching memories.
         """
+        print(f"[SEARCH] Searcher.search() called with query='{query}', top_k={top_k}", flush=True)
         if not info:
             logger.warning(
                 "Please input 'info' when use tree.search so that "
@@ -231,6 +238,7 @@ class Searcher:
         if full_recall:
             return retrieved_results
 
+        print(f"[SEARCH] Before post_retrieve: {len(retrieved_results)} results", flush=True)
         final_results = self.post_retrieve(
             retrieved_results=retrieved_results,
             top_k=top_k,
@@ -246,6 +254,7 @@ class Searcher:
             dedup=dedup,
         )
 
+        print(f"[SEARCH] After post_retrieve: {len(final_results)} results", flush=True)
         logger.info(f"[SEARCH] Done. Total {len(final_results)} results.")
         res_results = ""
         for _num_i, result in enumerate(final_results):
@@ -324,6 +333,10 @@ class Searcher:
         if parsed_goal.memories:
             embed_texts = list(dict.fromkeys([query, *parsed_goal.memories]))
             query_embedding = self.embedder.embed(embed_texts)
+        # Ensure query_embedding is always generated for vector search
+        if query_embedding is None:
+            query_embedding = self.embedder.embed([query])
+            logger.info("[SEARCH] Generated query_embedding (was None)")
         return parsed_goal, query_embedding, context, query
 
     @timed
@@ -347,6 +360,7 @@ class Searcher:
         pref_mem_top_k: int = 6,
     ):
         """Run A/B/C/D/E/F retrieval paths in parallel"""
+        print(f"[PATHS] _retrieve_paths called, memory_type={memory_type}", flush=True)
         tasks = []
         id_filter = {
             "user_id": info.get("user_id", None),
@@ -464,6 +478,7 @@ class Searcher:
             for t in tasks:
                 results.extend(t.result())
 
+        print(f"[PATHS] Total raw results: {len(results)}", flush=True)
         logger.info(f"[SEARCH] Total raw results: {len(results)}")
         return results
 
@@ -617,6 +632,7 @@ class Searcher:
         mode: str = "fast",
     ):
         """Retrieve and rerank from LongTermMemory and UserMemory"""
+        print(f"[LONG_TERM_USER] _retrieve_from_long_term_and_user called, memory_type={memory_type}, query_embedding={'YES' if query_embedding else 'NO'}", flush=True)
         results = []
         tasks = []
 
@@ -686,7 +702,8 @@ class Searcher:
             results = self._deduplicate_rawfile_results(results, user_name=user_name)
             results = self._filter_intermediate_content(results)
 
-        return self.reranker.rerank(
+        print(f"[LONG_TERM_USER] Before rerank: {len(results)} results", flush=True)
+        reranked = self.reranker.rerank(
             query=query,
             query_embedding=query_embedding[0],
             graph_results=results,
@@ -694,6 +711,8 @@ class Searcher:
             parsed_goal=parsed_goal,
             search_filter=search_filter,
         )
+        print(f"[LONG_TERM_USER] After rerank: {len(reranked)} results", flush=True)
+        return reranked
 
     @timed
     def _retrieve_from_memcubes(

@@ -263,6 +263,7 @@ def create_memory(memory_req: MemoryCreateRequest):
 @router.post("/search", summary="Search memories", response_model=SearchResponse)
 def search_memories(search_req: SearchRequest):
     """Search memories for a specific user."""
+    print(f"[ROUTER] search_memories called: user_id={search_req.user_id}, query='{search_req.query}'", flush=True)
     try:
         time_start_search = time.time()
         mos_product = get_mos_product_instance()

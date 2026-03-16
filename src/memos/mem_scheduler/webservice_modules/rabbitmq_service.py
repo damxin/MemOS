@@ -87,9 +87,17 @@ class RabbitMQSchedulerModule(BaseSchedulerModule):
             self._rabbitmq_initializing = True
         try:
             # Skip remote initialization in CI/pytest unless explicitly enabled
-            enable_env = os.getenv("MEMOS_ENABLE_RABBITMQ", "").lower() == "true"
+            enable_env_str = os.getenv("MEMOS_ENABLE_RABBITMQ", "").strip().lower()
             in_ci = os.getenv("CI", "").lower() == "true"
             in_pytest = os.getenv("PYTEST_CURRENT_TEST") is not None
+
+            # Determine if RabbitMQ should be enabled
+            if enable_env_str == "false":
+                # Explicitly disabled
+                logger.info("RabbitMQ initialization skipped: MEMOS_ENABLE_RABBITMQ=false")
+                return
+            enable_env = enable_env_str == "true"
+
             logger.info(
                 f"[DIAGNOSTIC] initialize_rabbitmq called. in_ci={in_ci}, in_pytest={in_pytest}, "
                 f"MEMOS_ENABLE_RABBITMQ={enable_env}, config_path={config_path}"

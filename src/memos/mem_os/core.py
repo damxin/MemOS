@@ -568,6 +568,7 @@ class MOSCore:
         Returns:
             MemoryResult: A dictionary containing the search results.
         """
+        print(f"[CORE.search] Entered MOSCore.search: user_id={user_id}, query='{query}'", flush=True)
         target_session_id = session_id if session_id is not None else self.session_id
         target_user_id = user_id if user_id is not None else self.user_id
 
@@ -605,10 +606,14 @@ class MOSCore:
         logger.info(
             f"time search: transform cube time user_id: {target_user_id} time is: {time.time() - time_start_cube_get}"
         )
+        print(f"[CORE] install_cube_ids={install_cube_ids}, tmp_mem_cubes keys={list(tmp_mem_cubes.keys())}", flush=True)
 
         for mem_cube_id, mem_cube in tmp_mem_cubes.items():
+            print(f"[CORE] Processing cube: {mem_cube_id}", flush=True)
+
             # Define internal functions for parallel search execution
             def search_textual_memory(cube_id, cube):
+                print(f"[CORE] search_textual_memory: cube_id={cube_id}, in_install={cube_id in install_cube_ids}, text_mem={cube.text_mem is not None}, enabled={self.config.enable_textual_memory}", flush=True)
                 if (
                     (cube_id in install_cube_ids)
                     and (cube.text_mem is not None)

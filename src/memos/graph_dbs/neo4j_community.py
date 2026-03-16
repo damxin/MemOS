@@ -1143,7 +1143,7 @@ class Neo4jCommunityGraphDB(Neo4jGraphDB):
         new_node = {"id": node.pop("id"), "memory": node.pop("memory", ""), "metadata": node}
         try:
             vec_item = self.vec_db.get_by_id(new_node["id"])
-            if vec_item and vec_item.vector:
+            if vec_item and vec_item.vector is not None and len(vec_item.vector) > 0:
                 new_node["metadata"]["embedding"] = vec_item.vector
         except Exception as e:
             logger.warning(f"Failed to fetch vector for node {new_node['id']}: {e}")
@@ -1186,7 +1186,7 @@ class Neo4jCommunityGraphDB(Neo4jGraphDB):
         if node_ids:
             try:
                 vec_items = self.vec_db.get_by_ids(node_ids)
-                vec_items_map = {v.id: v.vector for v in vec_items if v and v.vector}
+                vec_items_map = {v.id: v.vector for v in vec_items if v and v.vector is not None and len(v.vector) > 0}
             except Exception as e:
                 logger.warning(f"Failed to batch fetch vectors for {len(node_ids)} nodes: {e}")
 

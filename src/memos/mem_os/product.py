@@ -1436,6 +1436,7 @@ class MOSProduct(MOSCore):
         session_id: str | None = None,
     ):
         """Search memories for a specific user."""
+        print(f"[PRODUCT.search] Entered MOSProduct.search: user_id={user_id}, query='{query}'", flush=True)
 
         # Load user cubes if not already loaded
         time_start = time.time()

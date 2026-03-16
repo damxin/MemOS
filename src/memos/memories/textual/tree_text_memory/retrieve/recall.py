@@ -337,7 +337,9 @@ class GraphMemoryRetriever:
         Perform vector-based similarity retrieval using query embedding.
         # TODO: tackle with post-filter and pre-filter(5.18+) better.
         """
+        print(f"[VECTOR_RECALL] Called with memory_scope={memory_scope}, query_embedding={'YES' if query_embedding else 'NO'}, top_k={top_k}", flush=True)
         if not query_embedding:
+            print("[VECTOR_RECALL] No query_embedding, returning empty", flush=True)
             return []
 
         def search_single(vec, search_priority=None, search_filter=None):
@@ -390,7 +392,9 @@ class GraphMemoryRetriever:
             all_hits.extend(path_a_future.result())
             all_hits.extend(path_b_future.result())
 
+        print(f"[VECTOR_RECALL] Got {len(all_hits)} hits for scope={memory_scope}", flush=True)
         if not all_hits:
+            print(f"[VECTOR_RECALL] No hits from vector search for scope={memory_scope}", flush=True)
             return []
 
         # merge and deduplicate, keeping highest score per ID
@@ -415,6 +419,7 @@ class GraphMemoryRetriever:
             )
             or []
         )
+        print(f"[VECTOR_RECALL] get_nodes returned {len(node_dicts)} nodes for {len(sorted_ids)} IDs, scope={memory_scope}", flush=True)
 
         # Restore score-based order and inject scores into metadata
         id_to_node = {}
@@ -437,6 +442,7 @@ class GraphMemoryRetriever:
                 node["metadata"]["relativity"] = id_to_score.get(rid, 0.0)
                 ordered_nodes.append(node)
 
+        print(f"[VECTOR_RECALL] Returning {len(ordered_nodes)} ordered nodes for scope={memory_scope}", flush=True)
         return [TextualMemoryItem.from_dict(n) for n in ordered_nodes]
 
     def _bm25_recall(

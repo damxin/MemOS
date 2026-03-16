@@ -74,12 +74,18 @@ def post_process_textual_mem(
     Post-process text, tool, skill and preference memory results.
     Now automatically handles preference memories.
     """
+    print(f"[POST_PROCESS] text_formatted_mem has {len(text_formatted_mem)} items", flush=True)
+    if text_formatted_mem:
+        for i, mem in enumerate(text_formatted_mem[:3]):
+            print(f"[POST_PROCESS] Item {i}: memory_type={mem.get('metadata', {}).get('memory_type', 'N/A')}", flush=True)
+
     fact_mem = [
         mem
         for mem in text_formatted_mem
         if mem["metadata"]["memory_type"]
         in ["WorkingMemory", "LongTermMemory", "UserMemory", "OuterMemory", "RawFileMemory"]
     ]
+    print(f"[POST_PROCESS] fact_mem has {len(fact_mem)} items after filtering", flush=True)
     tool_mem = [
         mem
         for mem in text_formatted_mem
