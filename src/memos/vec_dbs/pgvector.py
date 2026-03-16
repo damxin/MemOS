@@ -648,4 +648,8 @@ class PGVectorVecDB(BaseVecDB):
 
     def __del__(self):
         """Destructor to ensure connection is closed."""
-        self.close()
+        try:
+            self.close()
+        except AttributeError:
+            # Connection was never initialized
+            pass

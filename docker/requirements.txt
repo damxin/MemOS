@@ -69,6 +69,7 @@ portalocker==2.8.0
 prometheus_client==0.23.1
 protobuf==6.33.1
 psycopg2-binary==2.9.11
+pgvector==0.4.0
 py-key-value-aio==0.2.8
 py-key-value-shared==0.2.8
 pycparser==2.23
