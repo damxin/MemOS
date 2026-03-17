@@ -193,6 +193,8 @@ def rerank_knowledge_mem(
         key=lambda item: item.get("metadata", {}).get("relativity", 0.0),
         reverse=True,
     )
+    for _dbg in reranked_knowledge_mem[:3]:
+        print(f"[FORMATTER] item={_dbg.get('id','?')[:8]} relativity={_dbg.get('metadata',{}).get('relativity','MISSING')}", flush=True)
     # replace memory value with source.content for LongTermMemory, WorkingMemory or UserMemory
     for item in reranked_knowledge_mem:
         item["memory"] = item["metadata"]["sources"][0]["content"]

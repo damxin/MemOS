@@ -76,6 +76,10 @@ class MemoryReranker:
         # Step 1: Filter out items without embeddings
         items_with_embeddings = [item for item in graph_results if item.metadata.embedding]
         embeddings = [item.metadata.embedding for item in items_with_embeddings]
+        print(f"[RERANKER] graph_results={len(graph_results)}, items_with_embeddings={len(items_with_embeddings)}", flush=True)
+        for i, item in enumerate(graph_results[:3]):
+            emb = item.metadata.embedding
+            print(f"[RERANKER] item {i}: id={item.id[:8]} type={item.metadata.memory_type} embedding={'YES len='+str(len(emb)) if emb else 'NONE'}", flush=True)
 
         if not embeddings:
             # Use relativity from recall stage if available, otherwise default to 0.5
@@ -86,6 +90,7 @@ class MemoryReranker:
 
         # Step 2: Compute cosine similarities
         similarity_scores = batch_cosine_similarity(query_embedding, embeddings)
+        print(f"[RERANKER] cosine_scores={similarity_scores[:5]}", flush=True)
 
         # Step 3: Apply structural weight boost
         def get_weight(item: TextualMemoryItem) -> float:

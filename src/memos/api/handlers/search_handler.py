@@ -69,9 +69,6 @@ class SearchHandler(BaseHandler):
         # Search and deduplicate
         cube_view = self._build_cube_view(search_req_local)
         results = cube_view.search_memories(search_req_local)
-        # Disable relativity filtering if using default value (0.45) since memories don't have relativity scores
-        if not search_req_local.relativity or search_req_local.relativity == 0.45:
-            search_req_local.relativity = 0
         self.logger.info(f"[SearchHandler] Relativity filter: {search_req_local.relativity}")
         results = self._apply_relativity_threshold(results, search_req_local.relativity)
 
@@ -130,10 +127,6 @@ class SearchHandler(BaseHandler):
                         filtered.append(mem)
 
                 bucket["memories"] = filtered
-                if "total_nodes" in bucket:
-                    bucket["total_nodes"] = len(filtered)
-
-        return results
                 if "total_nodes" in bucket:
                     bucket["total_nodes"] = len(filtered)
 

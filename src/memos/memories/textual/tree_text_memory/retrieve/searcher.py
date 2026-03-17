@@ -705,7 +705,7 @@ class Searcher:
         print(f"[LONG_TERM_USER] Before rerank: {len(results)} results", flush=True)
         reranked = self.reranker.rerank(
             query=query,
-            query_embedding=query_embedding[0],
+            query_embedding=query_embedding[0] if query_embedding else None,
             graph_results=results,
             top_k=top_k,
             parsed_goal=parsed_goal,
@@ -1141,6 +1141,7 @@ class Searcher:
             if plugin and round(score, 2) == 0.00:
                 continue
             meta_data = item.metadata.model_dump()
+            print(f"[SORT_TRIM] item={item.id[:8]}... score={score} type={item.metadata.memory_type}", flush=True)
             meta_data["relativity"] = score
             final_items.append(
                 TextualMemoryItem(

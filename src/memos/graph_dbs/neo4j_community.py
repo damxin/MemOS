@@ -1145,6 +1145,9 @@ class Neo4jCommunityGraphDB(Neo4jGraphDB):
             vec_item = self.vec_db.get_by_id(new_node["id"])
             if vec_item and vec_item.vector is not None and len(vec_item.vector) > 0:
                 new_node["metadata"]["embedding"] = vec_item.vector
+                print(f"[PARSE_NODE] id={new_node['id'][:8]}... got embedding len={len(vec_item.vector)}", flush=True)
+            else:
+                print(f"[PARSE_NODE] id={new_node['id'][:8]}... NO embedding (vec_item={vec_item is not None}, vec_none={vec_item.vector is None if vec_item else 'N/A'})", flush=True)
         except Exception as e:
             logger.warning(f"Failed to fetch vector for node {new_node['id']}: {e}")
             new_node["metadata"]["embedding"] = None
