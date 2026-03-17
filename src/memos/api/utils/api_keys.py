@@ -24,7 +24,7 @@ def generate_api_key() -> APIKey:
     """
     Generate a new API key.
 
-    Format: krlk_<64-hex-chars>
+    Format: mem_<64-hex-chars>
 
     Returns:
         APIKey with key, hash, and prefix
@@ -33,7 +33,7 @@ def generate_api_key() -> APIKey:
     random_bytes = secrets.token_bytes(32)
     hex_part = random_bytes.hex()
 
-    key = f"krlk_{hex_part}"
+    key = f"mem_{hex_part}"
     key_hash = hashlib.sha256(key.encode()).hexdigest()
     key_prefix = key[:12]
 
@@ -49,15 +49,15 @@ def validate_key_format(key: str) -> bool:
     """
     Validate API key format.
 
-    Valid format: krlk_<64-hex-chars>
+    Valid format: mem_<64-hex-chars>
     """
     if not key or not isinstance(key, str):
         return False
 
-    if not key.startswith("krlk_"):
+    if not key.startswith("mem_"):
         return False
 
-    hex_part = key[5:]
+    hex_part = key[4:]
     if len(hex_part) != 64:
         return False
 

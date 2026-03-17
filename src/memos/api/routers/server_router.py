@@ -15,9 +15,10 @@ import os
 import random as _random
 import socket
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from memos.api import handlers
+from memos.api.middleware.auth import verify_api_key
 from memos.api.handlers.add_handler import AddHandler
 from memos.api.handlers.base_handler import HandlerDependencies
 from memos.api.handlers.chat_handler import ChatHandler
@@ -60,7 +61,7 @@ from memos.mem_scheduler.utils.status_tracker import TaskStatusTracker
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/product", tags=["Server API"])
+router = APIRouter(prefix="/product", tags=["Server API"], dependencies=[Depends(verify_api_key)])
 
 # Instance ID for identifying this server instance in logs and responses
 INSTANCE_ID = f"{socket.gethostname()}:{os.getpid()}:{_random.randint(1000, 9999)}"

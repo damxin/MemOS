@@ -215,6 +215,7 @@ def generate_new_master_key(
 @router.get(
     "/health",
     summary="Admin health check",
+    dependencies=[Depends(verify_api_key)],
 )
 def admin_health():
     """Health check for admin endpoints."""

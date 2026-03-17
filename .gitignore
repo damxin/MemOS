@@ -232,3 +232,9 @@ outputs
 evaluation/data/temporal_locomo
 test_add_pipeline.py
 test_file_pipeline.py
+docker/docker-compose.yml
+.env
+docker/.env
+clean_history.sh
+push_to_github.sh
+DEPLOYMENT_STATUS.md

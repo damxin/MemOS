@@ -25,7 +25,7 @@ API_KEY_HEADER = APIKeyHeader(name="Authorization", auto_error=False)
 # Environment configuration
 AUTH_ENABLED = os.getenv("AUTH_ENABLED", "false").lower() == "true"
 MASTER_KEY_HASH = os.getenv("MASTER_KEY_HASH")  # SHA-256 hash of master key
-INTERNAL_SERVICE_IPS = {"127.0.0.1", "::1", "memos-mcp", "moltbot", "clawdbot"}
+INTERNAL_SERVICE_IPS = {"memos-mcp", "moltbot", "clawdbot"}
 
 # Connection pool for auth queries (lazy init)
 _auth_pool = None
@@ -63,10 +63,10 @@ def hash_api_key(key: str) -> str:
 
 
 def validate_key_format(key: str) -> bool:
-    """Validate API key format: krlk_<64-hex>."""
-    if not key or not key.startswith("krlk_"):
+    """Validate API key format: mem_<64-hex>."""
+    if not key or not key.startswith("mem_"):
         return False
-    hex_part = key[5:]  # Remove 'krlk_' prefix
+    hex_part = key[4:]  # Remove 'mem_' prefix
     if len(hex_part) != 64:
         return False
     try:
@@ -150,8 +150,11 @@ def is_internal_request(request: Request) -> bool:
         return True
 
     # Check internal header (for container-to-container)
-    internal_header = request.headers.get("X-Internal-Service")
-    return internal_header == os.getenv("INTERNAL_SERVICE_SECRET")
+    internal_secret = os.getenv("INTERNAL_SERVICE_SECRET")
+    if internal_secret:
+        internal_header = request.headers.get("X-Internal-Service")
+        return internal_header == internal_secret
+    return False
 
 
 async def verify_api_key(
@@ -212,7 +215,7 @@ async def verify_api_key(
             "is_master_key": True,
         }
 
-    # Validate format for regular API keys (krlk_*)
+    # Validate format for regular API keys (mem_*)
     if not validate_key_format(api_key):
         raise HTTPException(
             status_code=401,
