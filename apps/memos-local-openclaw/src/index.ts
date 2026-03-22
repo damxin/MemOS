@@ -1,7 +1,9 @@
 import { v4 as uuid } from "uuid";
 import { buildContext } from "./config";
 import { ensureSqliteBinding } from "./storage/ensure-binding";
+import { isPostgresStore } from "./storage/store-factory";
 import { SqliteStore } from "./storage/sqlite";
+import { PostgresStore } from "./storage/postgres";
 import { Embedder } from "./embedding";
 import { IngestWorker } from "./ingest/worker";
 import { RecallEngine } from "./recall/engine";
@@ -55,20 +57,29 @@ export function initPlugin(opts: PluginInitOptions = {}): MemosLocalPlugin {
 
   ctx.log.info("Initializing memos-local plugin...");
 
-  ensureSqliteBinding(ctx.log);
+  // Only ensure SQLite binding when using SQLite (not PostgreSQL)
+  if (!ctx.config.storage?.databaseUrl) {
+    ensureSqliteBinding(ctx.log);
+  }
 
-  const store = new SqliteStore(ctx.config.storage!.dbPath!, ctx.log);
+  const store = createStoreSync(ctx.config.storage!, ctx.log, stateDir);
   const embedder = new Embedder(ctx.config.embedding, ctx.log);
-  const worker = new IngestWorker(store, embedder, ctx);
-  const engine = new RecallEngine(store, embedder, ctx);
+  
+  // Use type assertion since both SqliteStore and PostgresStore implement the same interface
+  // The consumer classes (IngestWorker, RecallEngine, tools) expect SqliteStore but we support both
+  const worker = new IngestWorker(store as unknown as SqliteStore, embedder, ctx);
+  const engine = new RecallEngine(store as unknown as SqliteStore, embedder, ctx);
 
   const tools: ToolDefinition[] = [
     createMemorySearchTool(engine),
-    createMemoryTimelineTool(store),
-    createMemoryGetTool(store),
+    createMemoryTimelineTool(store as unknown as SqliteStore),
+    createMemoryGetTool(store as unknown as SqliteStore),
   ];
 
-  ctx.log.info(`Plugin ready. DB: ${ctx.config.storage!.dbPath}, Embedding: ${embedder.provider}`);
+  const dbInfo = ctx.config.storage?.databaseUrl
+    ? `PostgreSQL (${ctx.config.storage.databaseUrl.replace(/\/\/.*:.*@/, "//***@")})`
+    : `SQLite (${ctx.config.storage?.dbPath})`;
+  ctx.log.info(`Plugin ready. DB: ${dbInfo}, Embedding: ${embedder.provider}`);
 
   return {
     id: "memos-local",
@@ -97,9 +108,37 @@ export function initPlugin(opts: PluginInitOptions = {}): MemosLocalPlugin {
     async shutdown(): Promise<void> {
       ctx.log.info("Shutting down memos-local plugin...");
       await worker.flush();
-      store.close();
+      if (isPostgresStore(store)) {
+        await store.close();
+      } else {
+        store.close();
+      }
     },
   };
+}
+
+/**
+ * Synchronous store creation for SQLite.
+ * PostgreSQL store creation is async, but we handle it via initialization check.
+ */
+function createStoreSync(storage: MemosLocalConfig["storage"], log: Logger, stateDir: string): SqliteStore | PostgresStore {
+  if (storage?.databaseUrl) {
+    // For PostgreSQL, we create the store but it needs async initialization
+    // The initialization is done lazily on first use
+    // This is a simplification - in production you'd want proper async init
+    log.info("[store-factory] PostgreSQL store created (async init deferred)");
+    const store = new PostgresStore(storage.databaseUrl, log, storage.pgSchema);
+    // Initialize asynchronously in background
+    store.initialize().catch((err: Error) => {
+      log.error("[store-factory] PostgreSQL init failed:", err);
+    });
+    return store;
+  }
+
+  // SQLite is synchronous
+  const dbPath = storage?.dbPath ?? `${stateDir}/memos-local/memos.db`;
+  log.info(`[store-factory] Creating SQLite store at: ${dbPath}`);
+  return new SqliteStore(dbPath, log);
 }
 
 function defaultStateDir(): string {

@@ -31,6 +31,9 @@ export function resolveConfig(raw: Partial<MemosLocalConfig> | undefined, stateD
   return {
     ...cfg,
     storage: {
+      // If databaseUrl is set, use PostgreSQL. Otherwise fall back to SQLite dbPath.
+      databaseUrl: cfg.storage?.databaseUrl,
+      pgSchema: cfg.storage?.pgSchema ?? "public",
       dbPath: cfg.storage?.dbPath ?? path.join(stateDir, "memos-local", "memos.db"),
     },
     recall: {

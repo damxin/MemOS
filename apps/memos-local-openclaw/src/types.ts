@@ -257,7 +257,20 @@ export interface MemosLocalConfig {
   summarizer?: SummarizerConfig;
   embedding?: EmbeddingConfig;
   storage?: {
+    /** SQLite database path. Use this for local file-based storage. */
     dbPath?: string;
+    /**
+     * PostgreSQL connection URL.
+     * Format: postgresql://user:password@host:port/database
+     * If set, PostgreSQL will be used instead of SQLite.
+     * Supports ${ENV_VAR} syntax for environment variable substitution.
+     */
+    databaseUrl?: string;
+    /**
+     * PostgreSQL schema name. Defaults to 'public'.
+     * Only used when databaseUrl is set.
+     */
+    pgSchema?: string;
   };
   recall?: {
     maxResultsDefault?: number;
