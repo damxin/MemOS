@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, copyFileSync } from "fs";
 import { execSync } from "child_process";
 import path from "path";
+import { createRequire } from "module";
 
 /**
  * Ensure the better-sqlite3 native binary is available.
@@ -10,7 +11,8 @@ import path from "path";
  * and restores it from bundled prebuilds if missing.
  */
 export function ensureSqliteBinding(log?: { info: (msg: string) => void; warn: (msg: string) => void }): void {
-  const bsqlPkg = require.resolve("better-sqlite3/package.json");
+  const _req = typeof require !== "undefined" ? require : createRequire(__filename);
+  const bsqlPkg = _req.resolve("better-sqlite3/package.json");
   const bsqlDir = path.dirname(bsqlPkg);
   const bindingPath = path.join(bsqlDir, "build", "Release", "better_sqlite3.node");
 

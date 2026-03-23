@@ -8,8 +8,9 @@ import { Embedder } from "./embedding";
 import { IngestWorker } from "./ingest/worker";
 import { RecallEngine } from "./recall/engine";
 import { captureMessages } from "./capture";
-import { createMemorySearchTool, createMemoryTimelineTool, createMemoryGetTool } from "./tools";
+import { createMemorySearchTool, createMemoryTimelineTool, createMemoryGetTool, createNetworkMemoryDetailTool } from "./tools";
 import type { MemosLocalConfig, ToolDefinition, Logger } from "./types";
+import type { HostModelsConfig } from "./openclaw-api";
 
 export interface MemosLocalPlugin {
   id: string;
@@ -25,6 +26,7 @@ export interface PluginInitOptions {
   workspaceDir?: string;
   config?: Partial<MemosLocalConfig>;
   log?: Logger;
+  hostModels?: HostModelsConfig;
 }
 
 /**
@@ -53,7 +55,7 @@ export interface PluginInitOptions {
 export function initPlugin(opts: PluginInitOptions = {}): MemosLocalPlugin {
   const stateDir = opts.stateDir ?? defaultStateDir();
   const workspaceDir = opts.workspaceDir ?? process.cwd();
-  const ctx = buildContext(stateDir, workspaceDir, opts.config, opts.log);
+  const ctx = buildContext(stateDir, workspaceDir, opts.config, opts.log, opts.hostModels);
 
   ctx.log.info("Initializing memos-local plugin...");
 
@@ -63,17 +65,20 @@ export function initPlugin(opts: PluginInitOptions = {}): MemosLocalPlugin {
   }
 
   const store = createStoreSync(ctx.config.storage!, ctx.log, stateDir);
-  const embedder = new Embedder(ctx.config.embedding, ctx.log);
-  
+  const embedder = new Embedder(ctx.config.embedding, ctx.log, ctx.openclawAPI);
+
   // Use type assertion since both SqliteStore and PostgresStore implement the same interface
   // The consumer classes (IngestWorker, RecallEngine, tools) expect SqliteStore but we support both
   const worker = new IngestWorker(store as unknown as SqliteStore, embedder, ctx);
   const engine = new RecallEngine(store as unknown as SqliteStore, embedder, ctx);
 
+  const sharedState = { lastSearchTime: 0 };
+
   const tools: ToolDefinition[] = [
-    createMemorySearchTool(engine),
+    createMemorySearchTool(engine, store, ctx, sharedState),
     createMemoryTimelineTool(store as unknown as SqliteStore),
     createMemoryGetTool(store as unknown as SqliteStore),
+    createNetworkMemoryDetailTool(store, ctx),
   ];
 
   const dbInfo = ctx.config.storage?.databaseUrl
@@ -95,7 +100,10 @@ export function initPlugin(opts: PluginInitOptions = {}): MemosLocalPlugin {
       const turnId = uuid();
       const tag = ctx.config.capture?.evidenceWrapperTag ?? "STORED_MEMORY";
 
-      const captured = captureMessages(messages, session, turnId, tag, ctx.log, owner);
+      const userSearchTime = sharedState.lastSearchTime || 0;
+      sharedState.lastSearchTime = 0;
+
+      const captured = captureMessages(messages, session, turnId, tag, ctx.log, owner, userSearchTime);
       if (captured.length > 0) {
         worker.enqueue(captured);
       }
