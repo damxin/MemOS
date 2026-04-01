@@ -11,19 +11,28 @@ services:
     env_file:
       - ../.env
     depends_on:
-      - neo4j
-      - qdrant
+      neo4j:
+        condition: service_healthy
     environment:
       - PYTHONPATH=/app/src
       - HF_ENDPOINT=https://hf-mirror.com
-      - QDRANT_HOST=qdrant-docker
-      - QDRANT_PORT=6333
       - NEO4J_URI=bolt://neo4j-docker:7687
+      # PostgreSQL + pgvector
+      - VECTOR_DB_BACKEND=${VECTOR_DB_BACKEND:-pgvector}
+      - POSTGRES_HOST=postgres18v
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-memos}
+      - POSTGRES_DATABASE=${POSTGRES_DB:-memos}
+      - POSTGRES_USER=${POSTGRES_USER:-memos}
+      - POSTGRES_PASSWORD=${POST...CFm}
+      # Authentication
+      - AUTH_ENABLED=***
+      - MASTER_KEY_HASH=8adbe28ceff5c38cd8f8a5b0c72ecc78076fb06b8de4d5f86b085c69ecc58fa1
     volumes:
       - ../src:/app/src
       - .:/app/docker
     networks:
-      - memos_network
+      - 1panel-network
 
   neo4j:
     image: neo4j:5.26.6
@@ -41,31 +50,11 @@ services:
       NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
       NEO4J_AUTH: "neo4j/12345678"
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
+      - /home/damxin/openclaw/workspace/memosdata/neo4j_data:/data
+      - /home/damxin/openclaw/workspace/memosdata/neo4j_logs:/logs
     networks:
-      - memos_network
-
-  qdrant:
-    image: qdrant/qdrant:v1.15.3
-    container_name: qdrant-docker
-    ports:
-      - "6333:6333"  # REST API
-      - "6334:6334"  # gRPC API
-    volumes:
-      - qdrant_data:/qdrant/storage
-    environment:
-      QDRANT__SERVICE__GRPC_PORT: 6334
-      QDRANT__SERVICE__HTTP_PORT: 6333
-    restart: unless-stopped
-    networks:
-      - memos_network
-
-volumes:
-  neo4j_data:
-  neo4j_logs:
-  qdrant_data:
+      - 1panel-network
 
 networks:
-  memos_network:
-    driver: bridge
+  1panel-network:
+    external: true
